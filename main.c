@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <assert.h>
 
+#define PI 3.14159265358979323846
+static double pi = PI;
+
 /* Shape's attributes... */
 //typedef struct {
 //  int16_t x; /* x-coordinate of Shape's position */
@@ -25,8 +28,15 @@ typedef struct {
   uint16_t height;
 } Rectangle;
 
+typedef struct {
+  Shape super; /* <== inherits Shape */
+  /* attributes added by this subclass... */
+  uint16_t radius;
+} Circle;
+
 /* constructor */
 static void Rectangle_ctor(Rectangle * const me, int16_t x, int16_t y, uint16_t width, uint16_t height);
+static void Circle_ctor(Circle * const me, int16_t x, int16_t y, uint16_t radius);
 
 /* Shape's operations (Shape's interface)... */
 static void Shape_ctor(Shape * const me, int16_t x, int16_t y);
@@ -57,6 +67,10 @@ static void Shape_draw_(Shape * const me) {
 /* Rectangle's class implementations of its virtual functions... */
 static uint32_t Rectangle_area_(Shape * const me);
 static void Rectangle_draw_(Shape * const me);
+/* Circle's class implementations of its virtual functions... */
+static void Circle_draw_(Shape* const me);
+static uint32_t Circle_area_(Shape * const me);
+
 /* constructor */
 void Rectangle_ctor(Rectangle * const me, int16_t x, int16_t y,
   uint16_t width, uint16_t height)
@@ -71,6 +85,18 @@ void Rectangle_ctor(Rectangle * const me, int16_t x, int16_t y,
   me->height = height;
 }
 
+void Circle_ctor(Circle * const me, int16_t x, int16_t y,
+  uint16_t radius)
+{
+  static struct ShapeVtbl const vtbl = { /* vtbl of the Rectangle class */
+    &Circle_area_,
+    &Circle_draw_
+  };
+  Shape_ctor(&me->super, x, y); /* call the superclass' ctor */
+  me->super.vptr = &vtbl; /* override the vptr */
+  me->radius = radius;
+}
+
 static inline uint32_t Shape_area(Shape * const me) {
  return (*me->vptr->area)(me);
 }
@@ -81,6 +107,15 @@ static uint32_t Rectangle_area_(Shape * const me) {
 }
 
 static void Rectangle_draw_(Shape * const me) {
+  
+}
+
+static uint32_t Circle_area_(Shape * const me) {
+  Circle * const me_ = (Circle *)me; /* explicit downcast */
+  return (uint32_t)(pi * (double)me_->radius * (double)me_->radius);
+}
+
+static void Circle_draw_(Shape * const me) {
   
 }
 
@@ -103,23 +138,27 @@ void Shape_moveBy(Shape * const me, int16_t dx, int16_t dy) {
 }
 
 int main (void) {
-
-  /* Test of Encapsulation */
-  //Shape s1, s2; /* multiple instances of Shape */
-  //Shape_ctor(&s1, 0, 1);
-  //Shape_ctor(&s2, -1, 2);
-  //Shape_moveBy(&s1, 2, -4);
-
-  /* Test of Inheritance */
   Rectangle r1, r2;
- /* instantiate rectangles... */
- Rectangle_ctor(&r1, 0, 2, 10, 15);
- Rectangle_ctor(&r2, -1, 3, 5, 8);
- /* re-use inherited function from the superclass Shape... */
- Shape_moveBy((Shape *)&r1, -2, 3);
- Shape_moveBy(&r2.super, 2, -1);
+  Circle c1, c2;
 
- Shape_area((Shape*)&r1);
+  /* instantiate rectangles... */
+  Rectangle_ctor(&r1, 0, 2, 10, 15);
+  Rectangle_ctor(&r2, -1, 3, 5, 8);
+
+  /* instantiate circles... */ 
+  Circle_ctor(&c1, 1, -1, 7);
+  Circle_ctor(&c2, 4, 0, 12);
+
+  /* re-use inherited function from the superclass Shape... */
+  Shape_moveBy((Shape *)&r1, -2, 3);
+  Shape_moveBy(&r2.super, 2, -1);
+  Shape_moveBy((Shape*)&c1, 0, 4);
+  Shape_moveBy(&c2.super, -3, -3);
+
+  Shape_area((Shape*)&r1);
+  Shape_area(&r2.super);
+  Shape_area((Shape*)&c1);
+  Shape_area(&c2.super);
 
   return 0;
 }
