@@ -20,7 +20,6 @@ typedef struct {
   int16_t y; /* y-coordinate of Shape's position */
 } Shape;
 
-
 typedef struct {
   Shape super; /* <== inherits Shape */
   /* attributes added by this subclass... */
@@ -34,26 +33,16 @@ typedef struct {
   uint16_t radius;
 } Circle;
 
+/* Polymorphism */
+struct ShapeVtbl {
+  uint32_t (*area)(Shape * const me);
+  void (*draw)(Shape * const me);
+};
+
 /* constructor */
 static void Rectangle_ctor(Rectangle * const me, int16_t x, int16_t y, uint16_t width, uint16_t height);
 static void Circle_ctor(Circle * const me, int16_t x, int16_t y, uint16_t radius);
-
-/* Shape's operations (Shape's interface)... */
 static void Shape_ctor(Shape * const me, int16_t x, int16_t y);
-static void Shape_moveBy(Shape * const me, int16_t dx, int16_t dy);
-
-/* Polymorphism */
-struct ShapeVtbl {
- uint32_t (*area)(Shape * const me);
- void (*draw)(Shape * const me);
- };
-
-uint32_t Shape_area(Shape * const me);
-void Shape_draw(Shape * const me);
-
-/* Shape class implementation of its virtual functions... */
-static uint32_t Shape_area_(Shape * const me);
-static void Shape_draw_(Shape * const me);
 
 /* Shape class implementations of its virtual functions... */
 static uint32_t Shape_area_(Shape * const me) {
@@ -101,21 +90,25 @@ static inline uint32_t Shape_area(Shape * const me) {
  return (*me->vptr->area)(me);
 }
 
-static uint32_t Rectangle_area_(Shape * const me) {
+static inline void Shape_draw(Shape * const me){
+  (*me->vptr->draw)(me);
+}
+
+uint32_t Rectangle_area_(Shape * const me) {
   Rectangle * const me_ = (Rectangle *)me; /* explicit downcast */
   return (uint32_t)me_->width * (uint32_t)me_->height;
 }
 
-static void Rectangle_draw_(Shape * const me) {
+void Rectangle_draw_(Shape * const me) {
   
 }
 
-static uint32_t Circle_area_(Shape * const me) {
+uint32_t Circle_area_(Shape * const me) {
   Circle * const me_ = (Circle *)me; /* explicit downcast */
   return (uint32_t)(pi * (double)me_->radius * (double)me_->radius);
 }
 
-static void Circle_draw_(Shape * const me) {
+void Circle_draw_(Shape * const me) {
   
 }
 
@@ -132,7 +125,7 @@ void Shape_ctor(Shape * const me, int16_t x, int16_t y) {
 }
 
 /* move-by operation */
-void Shape_moveBy(Shape * const me, int16_t dx, int16_t dy) {
+static inline void Shape_moveBy(Shape * const me, int16_t dx, int16_t dy) {
   me->x += dx;
   me->y += dy;
 }
@@ -159,6 +152,11 @@ int main (void) {
   Shape_area(&r2.super);
   Shape_area((Shape*)&c1);
   Shape_area(&c2.super);
+
+  Shape_draw((Shape*)&r1);
+  Shape_draw(&r2.super);
+  Shape_draw((Shape*)&c1);
+  Shape_draw(&c2.super);
 
   return 0;
 }
